@@ -154,8 +154,23 @@ def solve_poisson(nx,ny,As,Q_in_flat):
     return u
 
 def L2_norm(u,u_a):
+    '''
+    Finds the L2 norm between the numerical and analytic solutions
+    
+    Parameters
+    ----------
+    u np.ndarray: numerical solution
+    u_a np.ndarray: analytic solution
+    
+    Returns
+    ----------
+    l2_diff float: the l2 norm
+    '''
     l2_diff = np.sqrt(np.sum((u-u_a)**2)/np.sum(u_a**2))
     return l2_diff
 
 def fit_lin(x,m,c):
+    '''
+    Function for the linear for
+    '''
     return m*x+c
