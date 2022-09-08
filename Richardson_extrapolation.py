@@ -1,34 +1,56 @@
 import numpy as np
-from scipy.sparse.linalg import spsolve,cg
+from scipy.sparse.linalg import spsolve
 from scipy.sparse import coo_matrix
 from sympy import *
 
 
-def source_term(nx,ny,Lx,Ly):
+def manufacture_source_term(nx,ny,Lx,Ly):
+    '''
+    Takes a known solution to the Poisson equation sin(pi_s*x_s/Lx_s)*sin(2*pi_s*y_s/Ly_s),differentiates it twice to find the source term. Then substitutes in grid values to find the numerical values of the source term. 
+    
+    This is the method of manufactured solutions. 
+    
+    Note that the simulation domain extends between the points (0,0) and (Lx,Ly).
+    
+    Parameters
+    ----------
+    nx,ny int: the number of grid points in x,y
+    Lx,Ly float: the limits in x and y of the domain
+    
+    Returns 
+    ----------
+    Q_in_flat np.ndarray: The flat (1d array) source term.
+    u_a np.ndarray: An array representation of the analytic solution.
+    
+    '''
     dx,dy = Lx/(nx-1),Ly/(ny-1)
-
+    
+    #The source term, going to be found by SymPy
     Q_in = np.zeros((nx,ny))
+    
+    #The analytic solution
     u_a = np.zeros((nx,ny))
-
-    # Use sympy to find derivatives and to populate Q_in
-
     x_s,y_s,pi_s,Lx_s,Ly_s = symbols('x_s y_s pi_s Lx_s Ly_s')
 
+    #This is the chosen solution to the PDE
     func = sin(pi_s*x_s/Lx_s)*sin(2*pi_s*y_s/Ly_s)
+    
+    #Taking the second derivative
     func_diff = -diff(func,x_s,x_s)-diff(func,y_s,y_s)
-    print(func_diff)
-
+    
+    #Replacing symbolic values by actual values of constants
     func = func.subs([(pi_s,np.pi),(Lx_s,Lx),(Ly_s,Ly)])
     func_diff = func_diff.subs([(pi_s,np.pi),(Lx_s,Lx),(Ly_s,Ly)])
 
+    #Populating the array
     for j in range(ny):
         for i in range(nx):
             x = dx*i
             y = dy*j
             Q_in[i,j] = func_diff.subs([(x_s,x),(y_s,y)])
             u_a[i,j] = func.subs([(x_s,x),(y_s,y)])
-            
-            
+    
+    #The PDE solver takes a flat input, so flattening to a 1-d array        
     Q_in_flat = np.zeros(nx*ny)
     for j in range(ny):
         for i in range(nx):
@@ -36,7 +58,7 @@ def source_term(nx,ny,Lx,Ly):
 
     return Q_in_flat,u_a
 
-def create_matrix(nx,ny,Lx,Ly):
+def create_poisson_matrix(nx,ny,Lx,Ly):
     
     dx,dy = Lx/(nx-1),Ly/(ny-1)
     
@@ -91,11 +113,10 @@ def create_matrix(nx,ny,Lx,Ly):
                 data.append(a4)
 
     As=coo_matrix((data, (row, col)), shape=(nx*ny, nx*ny))
-    #As = As.tolil()
     As = As.tocsr()
     return As
 
-def solve_pde(nx,ny,As,Q_in_flat):
+def solve_poisson(nx,ny,As,Q_in_flat):
     n = spsolve(As,-Q_in_flat)
 
     u = np.zeros((nx,ny))
@@ -103,15 +124,6 @@ def solve_pde(nx,ny,As,Q_in_flat):
         for i in range(nx):
             u[i,j]= n[nx*j+i]
     return u
-
-def solve_pde_cg(nx,ny,As,Q_in_flat):
-    n = cg(As,-Q_in_flat)
-
-    u = np.zeros((nx,ny))
-    for j in range(ny):
-        for i in range(nx):
-            u[i,j]= n[0][nx*j+i]
-    return n
 
 def L2_norm(u,u_a):
     l2_diff = np.sqrt(np.sum((u-u_a)**2)/np.sum(u_a**2))
