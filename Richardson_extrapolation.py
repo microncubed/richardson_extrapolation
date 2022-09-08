@@ -171,6 +171,6 @@ def L2_norm(u,u_a):
 
 def fit_lin(x,m,c):
     '''
-    Function for the linear for
+    Function for the linear fit
     '''
     return m*x+c
