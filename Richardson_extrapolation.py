@@ -19,8 +19,8 @@ def manufacture_source_term(nx,ny,Lx,Ly):
     
     Returns 
     ----------
-    Q_in_flat np.ndarray: The flat (1d array) source term.
-    u_a np.ndarray: An array representation of the analytic solution.
+    Q_in_flat np.ndarray: The flat (1d array) source term
+    u_a np.ndarray: An array representation of the analytic solution
     
     '''
     dx,dy = Lx/(nx-1),Ly/(ny-1)
@@ -59,6 +59,18 @@ def manufacture_source_term(nx,ny,Lx,Ly):
     return Q_in_flat,u_a
 
 def create_poisson_matrix(nx,ny,Lx,Ly):
+    '''
+    Creates the matrix used to solve the Poisson equation with Dirichlet boundary conditions. 
+    
+    Parameters
+    ----------
+    nx,ny int: the number of grid points in x,y
+    Lx,Ly float: the limits in x and y of the domain
+   
+    Returns
+    ----------
+    As scipy.linalg sparse matrix in csr format: the LHS term in the matrix equation
+    '''
     
     dx,dy = Lx/(nx-1),Ly/(ny-1)
     
@@ -116,9 +128,25 @@ def create_poisson_matrix(nx,ny,Lx,Ly):
     As = As.tocsr()
     return As
 
-def solve_poisson(nx,ny,As,Q_in_flat):
+def solve_poisson(nx,ny,As,Q_in_flat):    
+    '''
+    Solves the Poisson equation directly for the given inputs.
+    
+    Parameters
+    ----------
+    nx,ny int: the number of grid points in x,y
+    Lx,Ly float: the limits in x and y of the domain
+    As scipy.linalg sparse matrix in csr format: the LHS term in the matrix equation
+    Q_in_flat np.ndarray: The flat (1d array) source term
+   
+    Returns
+    ----------
+    u np.ndarray: the numerical solution
+    '''
+    # Perform the numerical solution
     n = spsolve(As,-Q_in_flat)
 
+    # Turn into a 2-d array
     u = np.zeros((nx,ny))
     for j in range(ny):
         for i in range(nx):
